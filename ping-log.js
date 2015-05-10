@@ -38,17 +38,35 @@ cleanUp();
 setInterval(cleanUp,1000*60*60);
 
 //need to use 'spawn' instead of 'exec' to be able to use streams
-var spawn = require('child_process').spawn;
-var child = spawn('ping', ['ping.funet.fi', '-n', '-i', '10']);
-var counter = 0;
-child.stdout.on('data', function(chunk) {
-	chunk = new String(chunk);
-	if(!chunk.match('PING'))
-	  fs.appendFileSync("/home/lauri/nodejs/ping-log/ping-log.txt", ",{\"t\":"+(new Date()).getTime() + ",\"ping\":" + chunk.split('time=')[1].split(' ')[0]+"}");
+
+function logPing(){
+	var spawn = require('child_process').spawn;
+	var child = spawn('ping', ['ping.funet.fi', '-n', '-c', '1']);
 	
-	//  console.log({"timestamp":(new Date()).getTime(),"ping" : chunk.split('time=')[1].split(' ')[0]});
-	counter++;
-});
+	child.stdout.on('data', function(chunk) {
+		chunk = String(chunk);
+		if(chunk.match('1 received')) {
+			fs.appendFileSync("/home/lauri/nodejs/ping-log/ping-log.txt",
+				",{\"t\":"+
+				(new Date()).getTime() +
+				",\"ping\":" + 
+				chunk.split('time=')[1].split(' ')[0]+
+				"}");
+		}
+		else {
+			fs.appendFileSync("/home/lauri/nodejs/ping-log/ping-log.txt", 
+				",{\"t\":"+
+				(new Date()).getTime() + 
+				",\"ping\":" +
+				"-1"+
+				"}");
+
+		//  console.log({"timestamp":(new Date()).getTime(),"ping" : chunk.split('time=')[1].split(' ')[0]});
+		}
+	});
+}
+
+setInterval(logPing,1000*10);
 
 http.createServer(function(request,response){
 	
