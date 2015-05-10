@@ -7,12 +7,12 @@ var http = require("http");
 function cleanUp() {
 	var logJson = JSON.parse(fs.readFileSync("/home/lauri/nodejs/ping-log/ping-log.txt",{encoding:"UTF-8"}) + "]}");
 	for(var i = 0;i < logJson.logs.length;i++){
-				if(logJson.logs[i].timestamp < (new Date().getTime() - 1000*60*60)){
-					if(new Date(logJson.logs[i].timestamp).getMinutes() === 0){
+				if(logJson.logs[i].t < (new Date().getTime() - 1000*60*60)){
+					if(new Date(logJson.logs[i].t).getMinutes() === 0){
 						//check if we can find more log-inputs from the same minute, if so, count average 
 						for(var j = i + 1; j < 10; j++){
 							if(logJson.logs[j]){
-								if(logJson.logs[j].timestamp - logJson.logs[i].timestamp < 1000*60*2){
+								if(logJson.logs[j].t - logJson.logs[i].t < 1000*60*2){
 									logJson.logs[i].ping = (logJson.logs[j].ping + logJson.logs[i].ping) / 2;
 									logJson.logs.splice(j,1);
 									j--;
@@ -34,7 +34,7 @@ function cleanUp() {
 cleanUp();
 
 
-//once in hour do cleanup in logfile
+//once in hour do cleanup in logfile 
 setInterval(cleanUp,1000*60*60);
 
 //need to use 'spawn' instead of 'exec' to be able to use streams
@@ -44,7 +44,7 @@ var counter = 0;
 child.stdout.on('data', function(chunk) {
 	chunk = new String(chunk);
 	if(!chunk.match('PING'))
-	  fs.appendFileSync("/home/lauri/nodejs/ping-log/ping-log.txt", ",{\"timestamp\":"+(new Date()).getTime() + ",\"ping\":" + chunk.split('time=')[1].split(' ')[0]+"}");
+	  fs.appendFileSync("/home/lauri/nodejs/ping-log/ping-log.txt", ",{\"t\":"+(new Date()).getTime() + ",\"ping\":" + chunk.split('time=')[1].split(' ')[0]+"}");
 	
 	//  console.log({"timestamp":(new Date()).getTime(),"ping" : chunk.split('time=')[1].split(' ')[0]});
 	counter++;
@@ -70,7 +70,7 @@ http.createServer(function(request,response){
 			var logJson = JSON.parse((fs.readFileSync("/home/lauri/nodejs/ping-log/ping-log.txt",{encoding:"UTF-8"}) + "]}"));
 			//console.log("%i",logJson.logs);
 			for(var i = 0;i < logJson.logs.length;i=i){
-				if(logJson.logs[i].timestamp < (new Date().getTime() - 1000*60*60))
+				if(logJson.logs[i].t < (new Date().getTime() - 1000*60*60))
 					logJson.logs.splice(i,1);
 				else //it should have reached the end of too old updates
 					break;
@@ -84,7 +84,7 @@ http.createServer(function(request,response){
 		else if(my_path.match(/^\/ping\/week$/)){
 			var logJson = JSON.parse((fs.readFileSync("/home/lauri/nodejs/ping-log/ping-log.txt",{encoding:"UTF-8"}) + "]}"));
 			for(var i = 0;i < logJson.logs.length;i = i=i){
-				if(logJson.logs[i].timestamp < (new Date().getTime() - 1000*60*60*24*7))
+				if(logJson.logs[i].t < (new Date().getTime() - 1000*60*60*24*7))
 					logJson.logs.splice(i,1);
 				else //it should have reached the end of too old updates
 					break;
