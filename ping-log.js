@@ -4,8 +4,12 @@ var url = require("url");
 var fs = require("fs");
 var http = require("http");
 
+//oh wow this function looks horrible
+// <- me after a year of making this
+//this should be cleaning the logfile, because we won't need 
+//the frequency of 10s from old measurements, rather just one measurement per hour
 function cleanUp() {
-	var logJson = JSON.parse(fs.readFileSync("/home/lauri/nodejs/ping-log/ping-log.txt",{encoding:"UTF-8"}) + "]}");
+	var logJson = JSON.parse(fs.readFileSync("ping-log.txt",{encoding:"UTF-8"}) + "]}");
 	for(var i = 0;i < logJson.logs.length;i++){
 				if(logJson.logs[i].t < (new Date().getTime() - 1000*60*60)){
 					if(new Date(logJson.logs[i].t).getMinutes() === 0){
@@ -29,7 +33,7 @@ function cleanUp() {
 					}
 				}
 	}
-	fs.writeFileSync("/home/lauri/nodejs/ping-log/ping-log.txt",JSON.stringify(logJson).substring(0,JSON.stringify(logJson).length-2));
+	fs.writeFileSync("ping-log.txt",JSON.stringify(logJson).substring(0,JSON.stringify(logJson).length-2));
 }
 cleanUp();
 
@@ -46,7 +50,7 @@ function logPing(){
 	child.stdout.on('data', function(chunk) {
 		chunk = String(chunk);
 		if(chunk.match('1 received')) {
-			fs.appendFileSync("/home/lauri/nodejs/ping-log/ping-log.txt",
+			fs.appendFileSync("ping-log.txt",
 				",{\"t\":"+
 				(new Date()).getTime() +
 				",\"ping\":" + 
@@ -54,14 +58,14 @@ function logPing(){
 				"}");
 		}
 		else {
-			fs.appendFileSync("/home/lauri/nodejs/ping-log/ping-log.txt", 
+			fs.appendFileSync("ping-log.txt", 
 				",{\"t\":"+
 				(new Date()).getTime() + 
 				",\"ping\":" +
 				"-1"+
 				"}");
 
-		//  console.log({"timestamp":(new Date()).getTime(),"ping" : chunk.split('time=')[1].split(' ')[0]});
+		
 		}
 	});
 }
@@ -71,21 +75,21 @@ setInterval(logPing,1000*10);
 http.createServer(function(request,response){
 	
 	var my_path = url.parse(request.url).pathname;
-	console.log("request.url: "+request.url);
-	console.log("my_path: "+my_path); 
+	//console.log("request.url: "+request.url);
+	//console.log("my_path: "+my_path); 
 	var method = request.method;
 	//GET
 	if(method === "GET"){
-		sys.puts("GET!\nmypath:"+my_path);
+		//sys.puts("GET!\nmypath:"+my_path);
 		if(my_path.match(/^\/ping\/all$/)){
 			response.writeHeader(200, {"Content-Type": "application/json"});
-			response.write(fs.readFileSync("/home/lauri/nodejs/ping-log/ping-log.txt",{encoding:"UTF-8"}) + "]}");
+			response.write(fs.readFileSync("ping-log.txt",{encoding:"UTF-8"}) + "]}");
 			response.end();
 			return;
 		}
 		else if(my_path.match(/^\/ping\/hour$/)){
 			
-			var logJson = JSON.parse((fs.readFileSync("/home/lauri/nodejs/ping-log/ping-log.txt",{encoding:"UTF-8"}) + "]}"));
+			var logJson = JSON.parse((fs.readFileSync("ping-log.txt",{encoding:"UTF-8"}) + "]}"));
 			//console.log("%i",logJson.logs);
 			for(var i = 0;i < logJson.logs.length;i=i){
 				if(logJson.logs[i].t < (new Date().getTime() - 1000*60*60))
@@ -100,7 +104,7 @@ http.createServer(function(request,response){
 			return;
 		}
 		else if(my_path.match(/^\/ping\/week$/)){
-			var logJson = JSON.parse((fs.readFileSync("/home/lauri/nodejs/ping-log/ping-log.txt",{encoding:"UTF-8"}) + "]}"));
+			var logJson = JSON.parse((fs.readFileSync("ping-log.txt",{encoding:"UTF-8"}) + "]}"));
 			for(var i = 0;i < logJson.logs.length;i = i=i){
 				if(logJson.logs[i].t < (new Date().getTime() - 1000*60*60*24*7))
 					logJson.logs.splice(i,1);
