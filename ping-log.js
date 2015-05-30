@@ -5,6 +5,19 @@ var fs = require("fs");
 var http = require("http");
 var readline = require('readline');
 
+var static = require('node-static');
+var file = new(static.Server)();
+var app = http.createServer(function (req, res) {
+  if(req.url === "/index.html" || req.url === "/"){
+  	file.serve(req, res);
+  }
+  else{
+	res.writeHead(404, {"Content-Type": "text/plain"});
+	res.write("404 Not Found\n");
+	res.end();
+return;
+  }
+}).listen(6999);
 
 
 
@@ -17,8 +30,8 @@ try{
 
 	setInterval(logPing,1000*10);
 
-	http.createServer(ownHttpServer).listen(8893);
-	sys.puts("Server Running on 8893");	
+	http.createServer(ownJSONServer).listen(6998);
+	sys.puts("Server Running on 6998");	
 }
 catch(e){
 	//file did not exist
@@ -44,8 +57,8 @@ catch(e){
 
 				setInterval(logPing,1000*10);
 			
-				http.createServer(ownHttpServer).listen(8893);
-				sys.puts("Server Running on 8893");	
+				http.createServer(ownJSONServer).listen(6998);
+				sys.puts("Server Running on 6998");	
 			}
 		);
 		
@@ -97,13 +110,14 @@ function logPing(){
 	var child = spawn('ping', ['ping.funet.fi', '-n', '-c', '1']);
 	
 	child.stdout.on('data', function(chunk) {
-		chunk = String(chunk);
-		if(chunk.match('1 received')) {
+		var strChunk = String(chunk);
+		
+		if(strChunk.match('1 received')) {
 			fs.appendFileSync("ping-log.json",
 				",{\"t\":"+
 				(new Date()).getTime() +
 				",\"ping\":" + 
-				chunk.split('time=')[1].split(' ')[0]+
+				strChunk.split('time=')[1].split(' ')[0]+
 				"}");
 		}
 		else {
@@ -123,7 +137,7 @@ function logPing(){
 
 
 
-function ownHttpServer(request,response){
+function ownJSONServer(request,response){
 	
 	var my_path = url.parse(request.url).pathname;
 	//console.log("request.url: "+request.url);
