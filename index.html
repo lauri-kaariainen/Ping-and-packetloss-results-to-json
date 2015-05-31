@@ -2,7 +2,7 @@
 <meta charset="utf-8">
 <head>
 <link rel="stylesheet" type="text/css" href="chart.css">
-<link href="../favicon.ico" rel="icon" type="image/x-icon" />
+<!-- <link href="../favicon.ico" rel="icon" type="image/x-icon" /> -->
 </head>
 <body>
 <!-- <a href="index-all.html" style="position:absolute;top:200px;left:800px;opacity:0.2;font-size:40px;">ALL TIME</a> -->
@@ -13,7 +13,7 @@
 <script>
 
 $.ajaxSettings.cache = false;
-
+console.log("are we running this");
 
 
 	var margin = {top: 20, right: 20, bottom: 30, left: 50},
@@ -90,7 +90,7 @@ var svg = d3.select("body").append("svg")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-$.get(".:8893/ping/hour/", 
+$.get('http://' + window.location.hostname + ':6998/ping/hour', 
 	function(data) {
 		console.log(data);
 		//var data = JSON.parse(data);
@@ -176,7 +176,7 @@ $.get(".:8893/ping/hour/",
 
 function updateGraph(){
 	//$.get("data/example.json", 
-	$.get("../ping-log/ajax/ping/hour", 
+	$.get('http://' + window.location.hostname + ':6998/ping/hour', 
 		function(data) {
 			console.log("updating");
 			console.log(data);

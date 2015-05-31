@@ -8,7 +8,9 @@ var readline = require('readline');
 var static = require('node-static');
 var file = new(static.Server)();
 var app = http.createServer(function (req, res) {
-  if(req.url === "/index.html" || req.url === "/"){
+  if(req.url === "/index.html" ||
+  	 req.url === "/" ||
+  	 req.url === "/chart.css"){
   	file.serve(req, res);
   }
   else{
@@ -107,28 +109,38 @@ function cleanUp() {
 
 function logPing(){
 	var spawn = require('child_process').spawn;
-	var child = spawn('ping', ['ping.funet.fi', '-n', '-c', '1']);
+	var child = spawn('ping', ['-n', '-c', '1', 'ping.funet.fi' ]);
 	
 	child.stdout.on('data', function(chunk) {
-		var strChunk = String(chunk);
-		
-		if(strChunk.match('1 received')) {
-			fs.appendFileSync("ping-log.json",
-				",{\"t\":"+
-				(new Date()).getTime() +
-				",\"ping\":" + 
-				strChunk.split('time=')[1].split(' ')[0]+
-				"}");
-		}
-		else {
-			fs.appendFileSync("ping-log.json", 
-				",{\"t\":"+
-				(new Date()).getTime() + 
-				",\"ping\":" +
-				"-1"+
-				"}");
+		try{
+			var strChunk = String(chunk);
+			
+			if(strChunk.match('1 received') || strChunk.match('1 packets received')) {
+				//we need to check if it is the right part of the chunk <- HACK
+				if(strChunk.match('time=')) {
+					fs.appendFileSync("ping-log.json",
+						",{\"t\":"+
+						(new Date()).getTime() +
+						",\"ping\":" + 
+						strChunk.split('time=')[1].split(' ')[0]+
+						"}");
+				}
+			}
+			else {
+				fs.appendFileSync("ping-log.json", 
+					",{\"t\":"+
+					(new Date()).getTime() + 
+					",\"ping\":" +
+					"-1"+
+					"}");
 
-		
+			
+			}
+		}
+		catch(e){
+			console.log("ERROR!");
+			console.log(strChunk);
+			throw(e);
 		}
 	});
 }
@@ -147,7 +159,13 @@ function ownJSONServer(request,response){
 	if(method === "GET"){
 		//sys.puts("GET!\nmypath:"+my_path);
 		if(my_path.match(/^\/ping\/all$/)){
-			response.writeHeader(200, {"Content-Type": "application/json"});
+			response.writeHeader(200, 
+									{
+										"Content-Type": "application/json",
+										"Access-Control-Allow-Origin": "*"
+									}
+								
+							);
 			response.write(fs.readFileSync("ping-log.json",{encoding:"UTF-8"}) + "]}");
 			response.end();
 			return;
@@ -163,7 +181,14 @@ function ownJSONServer(request,response){
 					break;
 			}
 
-			response.writeHeader(200, {"Content-Type": "application/json"});
+			response.writeHeader(200, 
+										{
+											"Content-Type": "application/json",
+											"Access-Control-Allow-Origin": "*"
+										}
+									
+								);
+			
 			response.write(JSON.stringify(logJson));
 			response.end();
 			return;
@@ -177,7 +202,13 @@ function ownJSONServer(request,response){
 					break;
 			}
 
-			response.writeHeader(200, {"Content-Type": "application/json"});
+			response.writeHeader(200, 
+										{
+											"Content-Type": "application/json",
+											"Access-Control-Allow-Origin": "*"
+										}
+									
+								);
 			response.write(JSON.stringify(logJson));
 			response.end();
 			return;
