@@ -90,34 +90,47 @@ function cleanUp() {
 
 
 
-//need to use 'spawn' instead of 'exec' to be able to use streams
 
 function logPing(){
-	var spawn = require('child_process').spawn;
-	var child = spawn('ping', ['ping.funet.fi', '-n', '-c', '1']);
 	
-	child.stdout.on('data', function(chunk) {
-		chunk = String(chunk);
-		if(chunk.match('1 received')) {
-			fs.appendFileSync("ping-log.json",
-				",{\"t\":"+
-				(new Date()).getTime() +
-				",\"ping\":" + 
-				chunk.split('time=')[1].split(' ')[0]+
-				"}");
-		}
-		else {
-			fs.appendFileSync("ping-log.json", 
-				",{\"t\":"+
-				(new Date()).getTime() + 
-				",\"ping\":" +
-				"-1"+
-				"}");
 
-		
-		}
-	});
+	var exec = require('child_process').exec;
+	var child = exec('ping -n -c 1 ping.funet.fi',
+		function(error,stdout,stderr){
+                	try{
+                        //console.log(" **************   got stdout: " + stdout);
+                        if(stdout.match('1 received') || stdout.match('1 packets received')) {
+                                if(stdout.match('time=')) {
+                                        fs.appendFileSync("ping-log.json",
+                                                ",{\"t\":"+
+                                                (new Date()).getTime() +
+                                                ",\"ping\":" +
+                                                stdout.split('time=')[1].split(' ')[0]+
+                                                "}");
+                                }
+                        }
+                        else {
+                                fs.appendFileSync("ping-log.json",
+                                        ",{\"t\":"+
+                                        (new Date()).getTime() +
+                                        ",\"ping\":" +
+                                        "-1"+
+                                        "}");
+
+
+                        }
+                
+	
+			}
+			catch(e){
+				console.log("ERROR!");
+				console.log(stdout);
+				throw(e);
+			}
+		});
+	
 }
+
 
 
 
