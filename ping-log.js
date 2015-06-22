@@ -20,6 +20,7 @@ var app = http.createServer(function (req, res) {
 return;
   }
 }).listen(6999);
+sys.puts("webserver running at 6999, you also need to have port 6998 open");
 
 
 
@@ -105,44 +106,44 @@ function cleanUp() {
 
 
 
-//need to use 'spawn' instead of 'exec' to be able to use streams
-
 function logPing(){
-	var spawn = require('child_process').spawn;
-	var child = spawn('ping', ['-n', '-c', '1', 'ping.funet.fi' ]);
 	
-	child.stdout.on('data', function(chunk) {
-		try{
-			var strChunk = String(chunk);
-			
-			if(strChunk.match('1 received') || strChunk.match('1 packets received')) {
-				//we need to check if it is the right part of the chunk <- HACK
-				if(strChunk.match('time=')) {
-					fs.appendFileSync("ping-log.json",
-						",{\"t\":"+
-						(new Date()).getTime() +
-						",\"ping\":" + 
-						strChunk.split('time=')[1].split(' ')[0]+
-						"}");
-				}
-			}
-			else {
-				fs.appendFileSync("ping-log.json", 
-					",{\"t\":"+
-					(new Date()).getTime() + 
-					",\"ping\":" +
-					"-1"+
-					"}");
 
-			
+	var exec = require('child_process').exec;
+	var child = exec('ping -n -c 1 ping.funet.fi',
+		function(error,stdout,stderr){
+                	try{
+                        //console.log(" **************   got stdout: " + stdout);
+                        if(stdout.match('1 received') || stdout.match('1 packets received')) {
+                                if(stdout.match('time=')) {
+                                        fs.appendFileSync("ping-log.json",
+                                                ",{\"t\":"+
+                                                (new Date()).getTime() +
+                                                ",\"ping\":" +
+                                                stdout.split('time=')[1].split(' ')[0]+
+                                                "}");
+                                }
+                        }
+                        else {
+                                fs.appendFileSync("ping-log.json",
+                                        ",{\"t\":"+
+                                        (new Date()).getTime() +
+                                        ",\"ping\":" +
+                                        "-1"+
+                                        "}");
+
+
+                        }
+                
+	
 			}
-		}
-		catch(e){
-			console.log("ERROR!");
-			console.log(strChunk);
-			throw(e);
-		}
-	});
+			catch(e){
+				console.log("ERROR!");
+				console.log(stdout);
+				throw(e);
+			}
+		});
+	
 }
 
 
