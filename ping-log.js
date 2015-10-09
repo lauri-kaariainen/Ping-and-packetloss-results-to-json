@@ -94,6 +94,7 @@ function cleanUp() {
 	fs.writeFileSync("ping-log.json",JSON.stringify(logJson).substring(0,JSON.stringify(logJson).length-2));
 }
 
+//TODO: move rest of db-access here
 function DB(){
 	function loadHour(){
 		var logJson = JSON.parse((fs.readFileSync("ping-log.json",{encoding:"UTF-8"}) + "]}"));
@@ -170,33 +171,12 @@ function ownHttpServer(request,response){
 	//console.log("request.url: "+request.url);
 	//console.log("my_path: "+my_path); 
 	var method = request.method;
-	//GET
 	if(method === "GET"){
 		//sys.puts("GET!\nmypath:"+my_path);
-		if(my_path.match(/^\/ping\/all$/)){
-			response.writeHeader(200, {"Content-Type": "application/json"});
-			response.write(fs.readFileSync("ping-log.json",{encoding:"UTF-8"}) + "]}");
-			response.end();
-			return;
-		}
-		else if(my_path.match(/^\/ping\/hour$/)){
+		if(my_path.match(/^\/ping\/hour$/)){
 
 			response.writeHeader(200, {"Content-Type": "application/json"});
 			response.write(JSON.stringify(globalCachedHourlyData));
-			response.end();
-			return;
-		}
-		else if(my_path.match(/^\/ping\/week$/)){
-			var logJson = JSON.parse((fs.readFileSync("ping-log.json",{encoding:"UTF-8"}) + "]}"));
-			for(var i = 0;i < logJson.logs.length;i = i=i){
-				if(logJson.logs[i].t < (new Date().getTime() - 1000*60*60*24*7))
-					logJson.logs.splice(i,1);
-				else //it should have reached the end of too old updates
-					break;
-			}
-
-			response.writeHeader(200, {"Content-Type": "application/json"});
-			response.write(JSON.stringify(logJson));
 			response.end();
 			return;
 		}
@@ -212,7 +192,6 @@ function ownHttpServer(request,response){
 	}
 	else{
 		response.writeHeader(405,"Method not allowed", {"Content-Type": "text/plain"});  
-		//response.write("404 Not Found\n");  
 		response.end();
 	}
 	
