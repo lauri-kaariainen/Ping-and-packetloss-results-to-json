@@ -6,6 +6,14 @@ var http = require("http");
 var readline = require('readline');
 
 
+var dataBase = new DB();
+
+var globalCachedHourlyData = "WARNING, CACHE IN INITIAL STATE";
+(function updateGlobalCacheResponse(){
+	
+	globalCachedHourlyData = dataBase.loadHour();		 
+})();
+
 
 
 //first run in folder?
@@ -86,7 +94,23 @@ function cleanUp() {
 	fs.writeFileSync("ping-log.json",JSON.stringify(logJson).substring(0,JSON.stringify(logJson).length-2));
 }
 
-
+function DB(){
+	function loadHour(){
+		var logJson = JSON.parse((fs.readFileSync("ping-log.json",{encoding:"UTF-8"}) + "]}"));
+			//console.log("%i",logJson.logs);
+			for(var i = 0;i < logJson.logs.length;i=i){
+				if(logJson.logs[i].t < (new Date().getTime() - 1000*60*60))
+					logJson.logs.splice(i,1);
+				else //it should have reached the end of too old updates
+					break;
+			}
+		return logJson;
+	}
+	
+	return {
+		loadHour:loadHour
+	}
+}
 
 
 
@@ -97,30 +121,34 @@ function logPing(){
 	var exec = require('child_process').exec;
 	var child = exec('ping -n -c 1 ping.funet.fi',
 		function(error,stdout,stderr){
-                	try{
-                        //console.log(" **************   got stdout: " + stdout);
-                        if(stdout.match('1 received') || stdout.match('1 packets received')) {
-                                if(stdout.match('time=')) {
-                                        fs.appendFileSync("ping-log.json",
-                                                ",{\"t\":"+
-                                                (new Date()).getTime() +
-                                                ",\"ping\":" +
-                                                stdout.split('time=')[1].split(' ')[0]+
-                                                "}");
-                                }
-                        }
-                        else {
-                                fs.appendFileSync("ping-log.json",
-                                        ",{\"t\":"+
-                                        (new Date()).getTime() +
-                                        ",\"ping\":" +
-                                        "-1"+
-                                        "}");
+			var timestamp = new Date().getTime();
+			try{
+				//console.log(" **************   got stdout: " + stdout);
+				if(stdout.match('1 received') || stdout.match('1 packets received')) {
+						if(stdout.match('time=')) {
+								fs.appendFileSync("ping-log.json",
+										",{\"t\":"+
+										timestamp +
+										",\"ping\":" +
+										stdout.split('time=')[1].split(' ')[0]+
+										"}");
+								globalCachedHourlyData.logs.push({t:timestamp,ping:stdout.split('time=')[1].split(' ')[0]});
+								globalCachedHourlyData.logs.shift();
+						}
+				}
+				else {
+						fs.appendFileSync("ping-log.json",
+								",{\"t\":"+
+								timestamp +
+								",\"ping\":" +
+								"-1"+
+								"}");
+						globalCachedHourlyData.logs.push({t:timestamp,ping:-1});
+						globalCachedHourlyData.logs.shift();
 
+				}
+		
 
-                        }
-                
-	
 			}
 			catch(e){
 				console.log("ERROR!");
@@ -152,18 +180,9 @@ function ownHttpServer(request,response){
 			return;
 		}
 		else if(my_path.match(/^\/ping\/hour$/)){
-			
-			var logJson = JSON.parse((fs.readFileSync("ping-log.json",{encoding:"UTF-8"}) + "]}"));
-			//console.log("%i",logJson.logs);
-			for(var i = 0;i < logJson.logs.length;i=i){
-				if(logJson.logs[i].t < (new Date().getTime() - 1000*60*60))
-					logJson.logs.splice(i,1);
-				else //it should have reached the end of too old updates
-					break;
-			}
 
 			response.writeHeader(200, {"Content-Type": "application/json"});
-			response.write(JSON.stringify(logJson));
+			response.write(JSON.stringify(globalCachedHourlyData));
 			response.end();
 			return;
 		}
