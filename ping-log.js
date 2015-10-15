@@ -9,10 +9,11 @@ var readline = require('readline');
 var dataBase = new DB();
 
 var globalCachedHourlyData = "WARNING, CACHE IN INITIAL STATE";
-(function updateGlobalCacheResponse(){
+function updateGlobalCacheResponse(){
 	
 	globalCachedHourlyData = dataBase.loadHour();		 
-})();
+};
+updateGlobalCacheResponse();
 
 
 
