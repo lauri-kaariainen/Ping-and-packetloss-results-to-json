@@ -99,7 +99,6 @@ function cleanUp() {
 function DB(){
 	function loadHour(){
 		var logJson = JSON.parse((fs.readFileSync("ping-log.json",{encoding:"UTF-8"}) + "]}"));
-			//console.log("%i",logJson.logs);
 			for(var i = 0;i < logJson.logs.length;i=i){
 				if(logJson.logs[i].t < (new Date().getTime() - 1000*60*60))
 					logJson.logs.splice(i,1);
@@ -125,7 +124,6 @@ function logPing(){
 		function(error,stdout,stderr){
 			var timestamp = new Date().getTime();
 			try{
-				//console.log(" **************   got stdout: " + stdout);
 				if(stdout.match('1 received') || stdout.match('1 packets received')) {
 						if(stdout.match('time=')) {
 								fs.appendFileSync("ping-log.json",
@@ -169,8 +167,6 @@ function logPing(){
 function ownHttpServer(request,response){
 	
 	var my_path = url.parse(request.url).pathname;
-	//console.log("request.url: "+request.url);
-	//console.log("my_path: "+my_path); 
 	var method = request.method;
 	if(method === "GET"){
 		//sys.puts("GET!\nmypath:"+my_path);
